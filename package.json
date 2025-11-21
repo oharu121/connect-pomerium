@@ -1,0 +1,79 @@
+{
+  "name": "connect-pomerium",
+  "version": "0.1.0",
+  "description": "Automate Pomerium tunnel creation for testing, CI/CD, and automation",
+  "type": "module",
+  "main": "./index.js",
+  "module": "./index.mjs",
+  "types": "./index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./index.d.ts",
+      "import": "./index.mjs",
+      "require": "./index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "bin",
+    "index.js",
+    "index.d.ts",
+    "index.mjs",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "lint": "eslint . --ext .ts",
+    "lint:fix": "eslint . --ext .ts --fix",
+    "format": "prettier --write \"src/**/*.{ts,js,json,md}\"",
+    "format:check": "prettier --check \"src/**/*.{ts,js,json,md}\"",
+    "check:exports": "attw --pack",
+    "prepublishOnly": "npm run build",
+    "sync": "git pull --rebase && npm install && npm test",
+    "sync:quick": "git pull --rebase && npm install"
+  },
+  "keywords": [
+    "pomerium",
+    "tunnel",
+    "automation",
+    "ci-cd",
+    "testing",
+    "proxy",
+    "zero-trust",
+    "authentication",
+    "sso"
+  ],
+  "author": "oharu121 <jefflin1201@gmail.com> (https://github.com/oharu121)",
+  "license": "MIT",
+  "devDependencies": {
+    "typescript": "^5.3.3",
+    "tsup": "^8.0.1",
+    "@types/node": "^20.11.0",
+    "@arethetypeswrong/cli": "^0.15.0",
+    "vitest": "^1.2.0",
+    "@vitest/coverage-v8": "^1.2.0",
+    "@typescript-eslint/eslint-plugin": "^6.19.0",
+    "@typescript-eslint/parser": "^6.19.0",
+    "eslint": "^8.56.0",
+    "prettier": "^3.2.4",
+    "eslint-config-prettier": "^9.1.0",
+    "playwright": "^1.48.0",
+    "puppeteer": "^21.0.0"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/oharu121/connect-pomerium.git"
+  },
+  "bugs": {
+    "url": "https://github.com/oharu121/connect-pomerium/issues"
+  },
+  "homepage": "https://github.com/oharu121/connect-pomerium#readme"
+}

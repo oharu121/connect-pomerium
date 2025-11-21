@@ -1,0 +1,31 @@
+# Source files
+src/
+*.ts
+!*.d.ts
+
+# Config files
+tsconfig.json
+tsup.config.ts
+vitest.config.ts
+jest.config.ts
+
+# Development files
+.github/
+.vscode/
+.idea/
+*.log
+
+# Tests
+**/*.test.*
+**/*.spec.*
+coverage/
+
+# Environment
+.env
+.env.*
+
+# Editor files
+*.swp
+*.swo
+*~
+.DS_Store
