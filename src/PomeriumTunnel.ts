@@ -162,7 +162,7 @@ export class PomeriumTunnel {
           try {
             execSync(`chmod +x "${binaryPath}"`);
             execSync(`xattr -d com.apple.quarantine "${binaryPath}" 2>/dev/null || true`);
-          } catch (err) {
+          } catch {
             // Ignore errors (file might not have quarantine attribute)
           }
         }
@@ -330,7 +330,7 @@ export class PomeriumTunnel {
     this.reconnectTimeout = setTimeout(async () => {
       try {
         await this.start();
-      } catch (err) {
+      } catch {
         // If reconnection fails, try again
         if (this.config.autoReconnect && !this.shuttingDown) {
           this.attemptReconnect();
