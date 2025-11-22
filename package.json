@@ -1,7 +1,7 @@
 {
   "name": "connect-pomerium",
   "version": "1.0.1",
-  "description": "Automate Pomerium tunnel creation for testing, CI/CD, and automation",
+  "description": "Automate Pomerium tunnel creation for testing, CI/CD, and automation (requires pomerium-cli v0.29.0+)",
   "type": "module",
   "main": "./index.js",
   "module": "./index.mjs",

@@ -9,6 +9,13 @@
 
 `connect-pomerium` is a lightweight TypeScript/JavaScript library that simplifies the creation and management of [Pomerium](https://www.pomerium.com/) tunnels. It's designed specifically for **automation scenarios** where you need programmatic access to Pomerium-protected services without manual browser interaction.
 
+## Requirements
+
+- **Node.js** 20.0.0 or higher
+- **Pomerium CLI** v0.29.0 or later ([Download](https://github.com/pomerium/cli/releases))
+
+> **Note:** This library requires pomerium-cli v0.29.0+ which uses JSON logging. If you're using an older CLI version, please use `connect-pomerium@1.x` instead.
+
 ## Features
 
 - 🚀 **Zero runtime dependencies** - Lean and fast
@@ -94,6 +101,10 @@ interface PomeriumTunnelConfig {
   onReconnecting?: (attempt: number) => void;
   onReconnectFailed?: () => void;
   onError?: (error: Error) => void;
+
+  // NEW in v2.0.0
+  onLog?: (log: PomeriumLogEntry) => void;  // Access raw CLI logs
+  logLevel?: 'debug' | 'info' | 'warn' | 'error'; // CLI log level (default: 'info')
 }
 ```
 
@@ -277,7 +288,74 @@ const tunnel = new PomeriumTunnel({
 });
 ```
 
+## Advanced Features (v2.0.0+)
+
+### Debug Logging
+
+Control the verbosity of pomerium-cli logs:
+
+```typescript
+const tunnel = new PomeriumTunnel({
+  targetHost: 'tcp+https://example.com:443',
+  listenPort: 8443,
+  logLevel: 'debug', // Options: 'debug', 'info', 'warn', 'error'
+});
+```
+
+### Access Raw Logs
+
+Get access to structured log entries from pomerium-cli:
+
+```typescript
+const tunnel = new PomeriumTunnel({
+  targetHost: 'tcp+https://example.com:443',
+  listenPort: 8443,
+  onLog: (log) => {
+    // Log is a structured object with: level, message, component, etc.
+    console.log(`[${log.level.toUpperCase()}] ${log.message}`);
+
+    // Access additional fields
+    if (log.component) console.log(`  Component: ${log.component}`);
+    if (log.error) console.error(`  Error: ${log.error}`);
+    if (log['auth-url']) console.log(`  Auth URL: ${log['auth-url']}`);
+  },
+});
+```
+
+### Parse Logs Manually
+
+You can also parse pomerium-cli logs yourself:
+
+```typescript
+import { parsePomeriumLog, extractAuthUrl, type PomeriumLogEntry } from 'connect-pomerium';
+
+// Parse JSON log line
+const logEntry = parsePomeriumLog('{"level":"info","message":"connected"}');
+if (logEntry) {
+  console.log(logEntry.level, logEntry.message);
+}
+
+// Extract auth URL from plain text
+const url = extractAuthUrl('Your browser has been opened to visit:\n\nhttps://auth.example.com\n');
+console.log(url); // "https://auth.example.com"
+```
+
 ## Troubleshooting
+
+### Version Compatibility
+
+If you see log parsing errors or connection issues:
+
+1. **Check your pomerium-cli version:**
+   ```bash
+   pomerium-cli --version
+   ```
+
+2. **If < v0.29.0:**
+   - Update to v0.29.0+ from https://github.com/pomerium/cli/releases
+   - OR use `connect-pomerium@1.x`: `npm install connect-pomerium@1.0.1`
+
+3. **If already v0.29.0+** and still having issues, please [open an issue](https://github.com/oharu121/connect-pomerium/issues)
 
 ### Binary Not Found
 

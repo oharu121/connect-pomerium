@@ -27,7 +27,11 @@ vi.mock('./utils/connection-tester.js', () => ({
 }));
 
 describe('PomeriumTunnel', () => {
-  let mockProcess: EventEmitter & { kill: ReturnType<typeof vi.fn>; stderr: EventEmitter };
+  let mockProcess: EventEmitter & {
+    kill: ReturnType<typeof vi.fn>;
+    stdout: EventEmitter;
+    stderr: EventEmitter;
+  };
   let spawn: ReturnType<typeof vi.fn>;
 
   beforeEach(async () => {
@@ -37,6 +41,7 @@ describe('PomeriumTunnel', () => {
     // Create mock child process
     mockProcess = new EventEmitter();
     mockProcess.kill = vi.fn();
+    mockProcess.stdout = new EventEmitter();
     mockProcess.stderr = new EventEmitter();
 
     // Mock spawn to return our mock process
@@ -83,16 +88,20 @@ describe('PomeriumTunnel', () => {
       // Start tunnel but don't wait for connection
       const startPromise = tunnel.start();
 
-      // Simulate connection established
+      // Simulate connection established (JSON format from v0.29.0+)
       setTimeout(() => {
-        mockProcess.stderr.emit('data', Buffer.from('connection established'));
+        mockProcess.stdout.emit(
+          'data',
+          Buffer.from('{"level":"info","message":"connected","time":"2025-11-23T00:43:55+09:00"}\n')
+        );
       }, 10);
 
       await startPromise;
 
       expect(spawn).toHaveBeenCalledWith(
         '/mock/path/to/pomerium-cli',
-        ['tcp', 'tcp+https://db.example.com:5432', '--listen', ':5432']
+        ['tcp', 'tcp+https://db.example.com:5432', '--listen', ':5432'],
+        expect.objectContaining({ env: expect.any(Object) })
       );
     });
 
@@ -106,14 +115,18 @@ describe('PomeriumTunnel', () => {
       const startPromise = tunnel.start();
 
       setTimeout(() => {
-        mockProcess.stderr.emit('data', Buffer.from('connection established'));
+        mockProcess.stdout.emit(
+          'data',
+          Buffer.from('{"level":"info","message":"connected","time":"2025-11-23T00:43:55+09:00"}\n')
+        );
       }, 10);
 
       await startPromise;
 
       expect(spawn).toHaveBeenCalledWith(
         '/mock/path/to/pomerium-cli',
-        expect.arrayContaining(['--browser-cmd', 'true'])
+        expect.arrayContaining(['--browser-cmd', 'true']),
+        expect.objectContaining({ env: expect.any(Object) })
       );
     });
 
@@ -126,7 +139,10 @@ describe('PomeriumTunnel', () => {
       const startPromise = tunnel.start();
 
       setTimeout(() => {
-        mockProcess.stderr.emit('data', Buffer.from('connection established'));
+        mockProcess.stdout.emit(
+          'data',
+          Buffer.from('{"level":"info","message":"connected","time":"2025-11-23T00:43:55+09:00"}\n')
+        );
       }, 10);
 
       await startPromise;
@@ -146,11 +162,18 @@ describe('PomeriumTunnel', () => {
       const startPromise = tunnel.start();
 
       setTimeout(() => {
-        mockProcess.stderr.emit(
+        // Auth required in JSON format (v0.29.0+)
+        mockProcess.stdout.emit(
           'data',
-          Buffer.from('Please authenticate: https://auth.example.com/login')
+          Buffer.from(
+            '{"level":"info","auth-url":"https://auth.example.com/login","message":"auth required"}\n'
+          )
         );
-        mockProcess.stderr.emit('data', Buffer.from('connection established'));
+        // Then connection established
+        mockProcess.stdout.emit(
+          'data',
+          Buffer.from('{"level":"info","message":"connected","time":"2025-11-23T00:43:55+09:00"}\n')
+        );
       }, 10);
 
       await startPromise;
@@ -169,7 +192,10 @@ describe('PomeriumTunnel', () => {
       const startPromise = tunnel.start();
 
       setTimeout(() => {
-        mockProcess.stderr.emit('data', Buffer.from('connection established'));
+        mockProcess.stdout.emit(
+          'data',
+          Buffer.from('{"level":"info","message":"connected","time":"2025-11-23T00:43:55+09:00"}\n')
+        );
       }, 10);
 
       await startPromise;
@@ -214,7 +240,10 @@ describe('PomeriumTunnel', () => {
       const startPromise3 = tunnel.start();
 
       setTimeout(() => {
-        mockProcess.stderr.emit('data', Buffer.from('connection established'));
+        mockProcess.stdout.emit(
+          'data',
+          Buffer.from('{"level":"info","message":"connected","time":"2025-11-23T00:43:55+09:00"}\n')
+        );
       }, 10);
 
       await Promise.all([startPromise1, startPromise2, startPromise3]);
@@ -232,7 +261,10 @@ describe('PomeriumTunnel', () => {
       // First connection
       const startPromise = tunnel.start();
       setTimeout(() => {
-        mockProcess.stderr.emit('data', Buffer.from('connection established'));
+        mockProcess.stdout.emit(
+          'data',
+          Buffer.from('{"level":"info","message":"connected","time":"2025-11-23T00:43:55+09:00"}\n')
+        );
       }, 10);
       await startPromise;
 
@@ -252,7 +284,10 @@ describe('PomeriumTunnel', () => {
 
       const startPromise = tunnel.start();
       setTimeout(() => {
-        mockProcess.stderr.emit('data', Buffer.from('connection established'));
+        mockProcess.stdout.emit(
+          'data',
+          Buffer.from('{"level":"info","message":"connected","time":"2025-11-23T00:43:55+09:00"}\n')
+        );
       }, 10);
       await startPromise;
 
@@ -270,7 +305,10 @@ describe('PomeriumTunnel', () => {
 
       const startPromise = tunnel.start();
       setTimeout(() => {
-        mockProcess.stderr.emit('data', Buffer.from('connection established'));
+        mockProcess.stdout.emit(
+          'data',
+          Buffer.from('{"level":"info","message":"connected","time":"2025-11-23T00:43:55+09:00"}\n')
+        );
       }, 10);
       await startPromise;
 
@@ -321,7 +359,10 @@ describe('PomeriumTunnel', () => {
 
       const startPromise = tunnel.start();
       setTimeout(() => {
-        mockProcess.stderr.emit('data', Buffer.from('connection established'));
+        mockProcess.stdout.emit(
+          'data',
+          Buffer.from('{"level":"info","message":"connected","time":"2025-11-23T00:43:55+09:00"}\n')
+        );
       }, 10);
       await startPromise;
 
@@ -348,7 +389,10 @@ describe('PomeriumTunnel', () => {
 
       const startPromise = tunnel.start();
       setTimeout(() => {
-        mockProcess.stderr.emit('data', Buffer.from('connection established'));
+        mockProcess.stdout.emit(
+          'data',
+          Buffer.from('{"level":"info","message":"connected","time":"2025-11-23T00:43:55+09:00"}\n')
+        );
       }, 10);
       await startPromise;
 
@@ -363,7 +407,10 @@ describe('PomeriumTunnel', () => {
 
       const startPromise = tunnel.start();
       setTimeout(() => {
-        mockProcess.stderr.emit('data', Buffer.from('connection established'));
+        mockProcess.stdout.emit(
+          'data',
+          Buffer.from('{"level":"info","message":"connected","time":"2025-11-23T00:43:55+09:00"}\n')
+        );
       }, 10);
       await startPromise;
 
@@ -403,12 +450,18 @@ describe('PomeriumTunnel', () => {
 
       const startPromise = tunnel.start();
       setTimeout(() => {
-        mockProcess.stderr.emit('data', Buffer.from('connection established'));
+        mockProcess.stdout.emit(
+          'data',
+          Buffer.from('{"level":"info","message":"connected","time":"2025-11-23T00:43:55+09:00"}\n')
+        );
       }, 10);
       await startPromise;
 
       // Simulate connection loss
-      mockProcess.stderr.emit('data', Buffer.from('connection closed'));
+      mockProcess.stdout.emit(
+        'data',
+        Buffer.from('{"level":"error","message":"disconnected","time":"2025-11-23T00:44:15+09:00"}\n')
+      );
 
       // Wait for event to be processed
       await new Promise(resolve => setTimeout(resolve, 50));
@@ -428,12 +481,18 @@ describe('PomeriumTunnel', () => {
 
       const startPromise = tunnel.start();
       setTimeout(() => {
-        mockProcess.stderr.emit('data', Buffer.from('connection established'));
+        mockProcess.stdout.emit(
+          'data',
+          Buffer.from('{"level":"info","message":"connected","time":"2025-11-23T00:43:55+09:00"}\n')
+        );
       }, 10);
       await startPromise;
 
       // Simulate connection loss
-      mockProcess.stderr.emit('data', Buffer.from('connection closed'));
+      mockProcess.stdout.emit(
+        'data',
+        Buffer.from('{"level":"error","message":"disconnected","time":"2025-11-23T00:44:15+09:00"}\n')
+      );
 
       // Wait for potential reconnection attempt
       await new Promise(resolve => setTimeout(resolve, 100));
@@ -453,7 +512,10 @@ describe('PomeriumTunnel', () => {
 
       const startPromise = tunnel.start();
       setTimeout(() => {
-        mockProcess.stderr.emit('data', Buffer.from('connection established'));
+        mockProcess.stdout.emit(
+          'data',
+          Buffer.from('{"level":"info","message":"connected","time":"2025-11-23T00:43:55+09:00"}\n')
+        );
       }, 10);
       await startPromise;
 
@@ -461,7 +523,10 @@ describe('PomeriumTunnel', () => {
       vi.mocked(spawn).mockClear();
 
       // Simulate connection loss
-      mockProcess.stderr.emit('data', Buffer.from('connection closed'));
+      mockProcess.stdout.emit(
+        'data',
+        Buffer.from('{"level":"error","message":"disconnected","time":"2025-11-23T00:44:15+09:00"}\n')
+      );
 
       // Wait for reconnection attempt
       await new Promise(resolve => setTimeout(resolve, 100));
@@ -484,12 +549,18 @@ describe('PomeriumTunnel', () => {
 
       const startPromise = tunnel.start();
       setTimeout(() => {
-        mockProcess.stderr.emit('data', Buffer.from('connection established'));
+        mockProcess.stdout.emit(
+          'data',
+          Buffer.from('{"level":"info","message":"connected","time":"2025-11-23T00:43:55+09:00"}\n')
+        );
       }, 10);
       await startPromise;
 
       // Simulate connection loss
-      mockProcess.stderr.emit('data', Buffer.from('connection closed'));
+      mockProcess.stdout.emit(
+        'data',
+        Buffer.from('{"level":"error","message":"disconnected","time":"2025-11-23T00:44:15+09:00"}\n')
+      );
 
       // Wait for reconnection attempts to start
       await new Promise(resolve => setTimeout(resolve, 200));
@@ -498,6 +569,171 @@ describe('PomeriumTunnel', () => {
       expect(onReconnecting).toHaveBeenCalled();
       // Verify reconnection was attempted with attempt number
       expect(onReconnecting.mock.calls[0][0]).toBeGreaterThan(0);
+    });
+  });
+
+  describe('JSON log parsing (v0.29.0+)', () => {
+    it('should handle multiple JSON log entries in single chunk', async () => {
+      const tunnel = new PomeriumTunnel({
+        targetHost: 'tcp+https://example.com:443',
+        listenPort: 8443,
+      });
+
+      const startPromise = tunnel.start();
+
+      setTimeout(() => {
+        // Simulate multiple log entries in one chunk
+        const multiLineLog = [
+          '{"level":"info","component":"tunnel","addr":"[::]:8443","message":"started tcp listener"}',
+          '{"level":"info","message":"connecting"}',
+          '{"level":"info","message":"connected"}',
+        ].join('\n');
+
+        mockProcess.stdout.emit('data', Buffer.from(multiLineLog + '\n'));
+      }, 10);
+
+      await startPromise;
+      expect(tunnel.isConnected()).toBe(true);
+    });
+
+    it('should handle plain text fallback for auth URL', async () => {
+      const onAuthRequired = vi.fn(async () => {});
+      const tunnel = new PomeriumTunnel({
+        targetHost: 'tcp+https://example.com:443',
+        listenPort: 8443,
+        onAuthRequired,
+      });
+
+      const startPromise = tunnel.start();
+
+      setTimeout(() => {
+        // Simulate plain text browser message (not JSON)
+        mockProcess.stdout.emit(
+          'data',
+          Buffer.from('Your browser has been opened to visit:\n\nhttps://auth.example.com/oauth/start\n\n')
+        );
+        // Then connection
+        mockProcess.stdout.emit(
+          'data',
+          Buffer.from('{"level":"info","message":"connected"}\n')
+        );
+      }, 10);
+
+      await startPromise;
+      expect(onAuthRequired).toHaveBeenCalledWith('https://auth.example.com/oauth/start');
+    });
+
+    it('should extract listener address from JSON log', async () => {
+      const tunnel = new PomeriumTunnel({
+        targetHost: 'tcp+https://example.com:443',
+        listenPort: 8443,
+      });
+
+      const startPromise = tunnel.start();
+
+      setTimeout(() => {
+        mockProcess.stdout.emit(
+          'data',
+          Buffer.from(
+            '{"level":"info","component":"tunnel","addr":"[::]:8443","message":"started tcp listener"}\n'
+          )
+        );
+        mockProcess.stdout.emit(
+          'data',
+          Buffer.from('{"level":"info","message":"connected"}\n')
+        );
+      }, 10);
+
+      await startPromise;
+      expect(tunnel.isConnected()).toBe(true);
+    });
+
+    it('should handle empty lines in log output', async () => {
+      const tunnel = new PomeriumTunnel({
+        targetHost: 'tcp+https://example.com:443',
+        listenPort: 8443,
+      });
+
+      const startPromise = tunnel.start();
+
+      setTimeout(() => {
+        // Simulate output with empty lines
+        mockProcess.stdout.emit(
+          'data',
+          Buffer.from('\n{"level":"info","message":"connected"}\n\n')
+        );
+      }, 10);
+
+      await startPromise;
+      expect(tunnel.isConnected()).toBe(true);
+    });
+
+    it('should pass logLevel to CLI via environment variable', async () => {
+      const tunnel = new PomeriumTunnel({
+        targetHost: 'tcp+https://example.com:443',
+        listenPort: 8443,
+        logLevel: 'debug',
+      });
+
+      const startPromise = tunnel.start();
+
+      setTimeout(() => {
+        mockProcess.stdout.emit(
+          'data',
+          Buffer.from('{"level":"info","message":"connected"}\n')
+        );
+      }, 10);
+
+      await startPromise;
+
+      expect(spawn).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.any(Array),
+        expect.objectContaining({
+          env: expect.objectContaining({ LOG_LEVEL: 'debug' }),
+        })
+      );
+    });
+
+    it('should invoke onLog callback for each log entry', async () => {
+      const onLog = vi.fn();
+      const tunnel = new PomeriumTunnel({
+        targetHost: 'tcp+https://example.com:443',
+        listenPort: 8443,
+        onLog,
+      });
+
+      const startPromise = tunnel.start();
+
+      setTimeout(() => {
+        mockProcess.stdout.emit(
+          'data',
+          Buffer.from(
+            '{"level":"info","component":"tunnel","addr":"[::]:8443","message":"started tcp listener"}\n'
+          )
+        );
+        mockProcess.stdout.emit(
+          'data',
+          Buffer.from('{"level":"info","message":"connected"}\n')
+        );
+      }, 10);
+
+      await startPromise;
+
+      expect(onLog).toHaveBeenCalledTimes(2);
+      expect(onLog).toHaveBeenCalledWith(
+        expect.objectContaining({
+          level: 'info',
+          message: 'started tcp listener',
+          component: 'tunnel',
+        })
+      );
+      expect(onLog).toHaveBeenCalledWith(
+        expect.objectContaining({
+          level: 'info',
+          message: 'connected',
+        })
+      );
     });
   });
 });

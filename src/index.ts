@@ -13,3 +13,5 @@ export {
   ProcessStartError,
   AuthenticationError,
 } from './errors.js';
+export type { PomeriumLogEntry } from './utils/log-parser.js';
+export { parsePomeriumLog, extractAuthUrl } from './utils/log-parser.js';

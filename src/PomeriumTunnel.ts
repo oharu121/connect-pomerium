@@ -10,6 +10,11 @@ import {
 import { resolveBinaryPath } from './utils/binary-resolver.js';
 import { getBrowserSuppressCommand } from './utils/browser-suppressor.js';
 import { testLocalConnection } from './utils/connection-tester.js';
+import {
+  parsePomeriumLog,
+  extractAuthUrl,
+  type PomeriumLogEntry,
+} from './utils/log-parser.js';
 
 /**
  * Manages a Pomerium tunnel connection
@@ -57,6 +62,8 @@ export class PomeriumTunnel {
       listenPort: config.listenPort,
       cliPath: config.cliPath,
       onAuthRequired: config.onAuthRequired,
+      onLog: config.onLog,
+      logLevel: config.logLevel,
       autoReconnect: config.autoReconnect ?? false,
       maxReconnectAttempts: config.maxReconnectAttempts ?? 0,
       reconnectDelay: config.reconnectDelay ?? 5000,
@@ -177,72 +184,46 @@ export class PomeriumTunnel {
 
         args.push('--listen', `:${this.config.listenPort}`);
 
+        // Set up environment variables
+        const env = { ...process.env };
+        if (this.config.logLevel) {
+          env.LOG_LEVEL = this.config.logLevel;
+        }
+
         // Spawn the process
-        this.process = spawn(binaryPath, args);
+        this.process = spawn(binaryPath, args, { env });
 
         let connectionEstablished = false;
 
-        // Handle stderr (Pomerium outputs logs to stderr)
-        this.process.stderr?.on('data', async (chunk) => {
-          const message = chunk.toString();
-          console.log(message); // Log for debugging
+        // Handle stdout (Pomerium CLI v0.29.0+ outputs JSON logs to stdout)
+        this.process.stdout?.on('data', async (chunk) => {
+          const lines = chunk.toString().split('\n');
 
-          // Check if listening
-          if (message.includes('listening on')) {
-            // Test connection for validation
-            testLocalConnection(this.config.listenPort).catch((err) => {
-              console.error(`Local connection test failed: ${err.message}`);
-            });
-          }
+          for (const line of lines) {
+            const trimmedLine = line.trim();
+            if (!trimmedLine) continue;
 
-          // Extract auth URL and invoke callback if provided
-          if (message.includes('https')) {
-            const match = message.match(/https?:\/\/[^\s]+/g);
-            if (match && match[0] && this.config.onAuthRequired) {
-              try {
-                await this.config.onAuthRequired(match[0]);
-              } catch (err) {
-                const authError = new AuthenticationError(
-                  err instanceof Error ? err.message : String(err)
-                );
-                this.config.onError?.(authError);
-                // Don't reject here, wait for process to handle auth failure
+            // Try parsing as JSON first (structured logs from v0.29.0+)
+            const logEntry = parsePomeriumLog(trimmedLine);
+
+            if (logEntry) {
+              // Successfully parsed JSON log
+              await this.handleLogEntry(logEntry, connectionEstablished, resolve, reject);
+
+              // Update connectionEstablished flag if connection was made
+              if (logEntry.message === 'connected' && !connectionEstablished) {
+                connectionEstablished = true;
               }
+            } else {
+              // Fallback to plain text parsing (e.g., browser auth message)
+              await this.handlePlainTextLine(trimmedLine);
             }
           }
+        });
 
-          // Check if connection is established
-          if (message.includes('connection established') && !connectionEstablished) {
-            connectionEstablished = true;
-            this.state.connected = true;
-            this.state.reconnecting = false;
-            this.state.reconnectAttempts = 0;
-
-            // Clear connection timeout
-            if (this.connectionTimeout) {
-              clearTimeout(this.connectionTimeout);
-              this.connectionTimeout = null;
-            }
-
-            // Setup signal handlers for graceful shutdown
-            this.setupSignalHandlers();
-
-            // Invoke connected callback
-            this.config.onConnected?.();
-
-            resolve();
-          }
-
-          // Handle connection closed (for reconnection)
-          if (message.includes('connection closed') && this.state.connected) {
-            this.state.connected = false;
-            this.config.onDisconnected?.();
-
-            // Attempt reconnection if enabled and not shutting down
-            if (this.config.autoReconnect && !this.shuttingDown) {
-              this.attemptReconnect();
-            }
-          }
+        // Handle stderr for debugging (should rarely output anything in v0.29.0+)
+        this.process.stderr?.on('data', (chunk) => {
+          console.error('[pomerium-cli stderr]:', chunk.toString());
         });
 
         // Handle process close
@@ -365,5 +346,107 @@ export class PomeriumTunnel {
       process.off(signal, handler);
     }
     this.signalHandlers.clear();
+  }
+
+  /**
+   * Handles a parsed JSON log entry from pomerium-cli
+   */
+  private async handleLogEntry(
+    logEntry: PomeriumLogEntry,
+    connectionEstablished: boolean,
+    resolve: () => void,
+    _reject: (error: Error) => void
+  ): Promise<void> {
+    // Invoke onLog callback if provided
+    if (this.config.onLog) {
+      this.config.onLog(logEntry);
+    }
+
+    // Handle based on log message
+    switch (logEntry.message) {
+      case 'started tcp listener':
+        // Listener started - test connection for validation
+        testLocalConnection(this.config.listenPort).catch((err) => {
+          console.error(`Local connection test failed: ${err.message}`);
+        });
+        break;
+
+      case 'auth required':
+        // Authentication needed - extract URL and invoke callback
+        if (logEntry['auth-url'] && this.config.onAuthRequired) {
+          try {
+            await this.config.onAuthRequired(logEntry['auth-url']);
+          } catch (err) {
+            const authError = new AuthenticationError(
+              err instanceof Error ? err.message : String(err)
+            );
+            this.config.onError?.(authError);
+            // Don't reject here, wait for process to handle auth failure
+          }
+        }
+        break;
+
+      case 'connected':
+        // Connection established
+        if (!connectionEstablished) {
+          this.state.connected = true;
+          this.state.reconnecting = false;
+          this.state.reconnectAttempts = 0;
+
+          // Clear connection timeout
+          if (this.connectionTimeout) {
+            clearTimeout(this.connectionTimeout);
+            this.connectionTimeout = null;
+          }
+
+          // Setup signal handlers for graceful shutdown
+          this.setupSignalHandlers();
+
+          // Invoke connected callback
+          this.config.onConnected?.();
+
+          resolve();
+        }
+        break;
+
+      case 'disconnected':
+        // Connection lost
+        if (this.state.connected) {
+          this.state.connected = false;
+          this.config.onDisconnected?.();
+
+          // Attempt reconnection if enabled and not shutting down
+          if (this.config.autoReconnect && !this.shuttingDown) {
+            this.attemptReconnect();
+          }
+        }
+        break;
+
+      case 'caught signal, quitting...':
+        // Graceful shutdown initiated by signal
+        break;
+
+      default:
+        // Other log messages - ignore or log for debugging
+        break;
+    }
+  }
+
+  /**
+   * Handles plain text lines (fallback for non-JSON output)
+   */
+  private async handlePlainTextLine(line: string): Promise<void> {
+    // Extract auth URL from plain text (e.g., browser message)
+    const authUrl = extractAuthUrl(line);
+    if (authUrl && this.config.onAuthRequired) {
+      try {
+        await this.config.onAuthRequired(authUrl);
+      } catch (err) {
+        const authError = new AuthenticationError(
+          err instanceof Error ? err.message : String(err)
+        );
+        this.config.onError?.(authError);
+      }
+    }
   }
 }

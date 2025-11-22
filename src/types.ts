@@ -80,6 +80,20 @@ export interface PomeriumTunnelConfig {
    * @param error The error that occurred
    */
   onError?: (error: Error) => void;
+
+  /**
+   * Optional: Callback to receive raw log entries from pomerium-cli
+   * Useful for debugging or custom log handling (requires pomerium-cli v0.29.0+)
+   * @param log The parsed JSON log entry
+   * @example (log) => { console.log('[CLI]', log.level, log.message); }
+   */
+  onLog?: (log: import('./utils/log-parser.js').PomeriumLogEntry) => void;
+
+  /**
+   * Optional: Log level for pomerium-cli output (via LOG_LEVEL environment variable)
+   * @default 'info'
+   */
+  logLevel?: 'debug' | 'info' | 'warn' | 'error';
 }
 
 /**
