@@ -1,6 +1,6 @@
 {
   "name": "connect-pomerium",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "Automate Pomerium tunnel creation for testing, CI/CD, and automation",
   "type": "module",
   "main": "./index.js",
