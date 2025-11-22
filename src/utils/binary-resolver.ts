@@ -39,10 +39,10 @@ export function resolveBinaryPath(customPath?: string): string {
 
   // Resolve path relative to this file
   // In development: src/utils/binary-resolver.ts -> ../../bin/
-  // In production (compiled): dist/utils/binary-resolver.js -> ../../bin/
+  // In production (compiled): dist/index.js -> ../bin/
   const __filename = fileURLToPath(import.meta.url);
   const __dirname = path.dirname(__filename);
-  const binPath = path.resolve(__dirname, '../../bin', binaryName);
+  const binPath = path.resolve(__dirname, '../bin', binaryName);
 
   if (!fs.existsSync(binPath)) {
     throw new BinaryNotFoundError(binPath);
