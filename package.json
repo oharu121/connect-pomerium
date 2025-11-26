@@ -37,7 +37,8 @@
     "prepublishOnly": "npm run build",
     "sync": "git pull --rebase && npm install && npm test",
     "sync:quick": "git pull --rebase && npm install",
-    "release": "node scripts/release.mjs"
+    "release": "node scripts/release.mjs",
+    "token": "node scripts/get-token.mjs"
   },
   "keywords": [
     "pomerium",

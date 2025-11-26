@@ -20,7 +20,7 @@ function exec(command, silent = false) {
   try {
     return execSync(command, {
       stdio: silent ? 'pipe' : 'inherit',
-      encoding: 'utf-8',
+      encoding: 'utf-8'
     });
   } catch (error) {
     throw new Error(`Command failed: ${command}\n${error.message}`);
@@ -53,7 +53,7 @@ async function release() {
 
     clack.note(
       'Releases are typically made from main/master branch.\n' +
-        'Publishing from a feature branch may cause issues.',
+      'Publishing from a feature branch may cause issues.',
       '⚠️  Warning:'
     );
 
@@ -84,7 +84,7 @@ async function release() {
 
       clack.note(
         `Remote has ${behind} commit(s) you don't have locally.\n` +
-          'This is likely from Dependabot or another developer.',
+        'This is likely from Dependabot or another developer.',
         'Remote ahead:'
       );
 
@@ -101,18 +101,36 @@ async function release() {
       // Check for uncommitted changes before pulling
       const status = exec('git status --porcelain', true).trim();
       if (status) {
-        clack.log.error('Cannot pull: you have uncommitted changes');
-        clack.note(
-          'Recovery steps:\n' +
-            '  1. Stash your changes:  git stash\n' +
-            '  2. Pull latest:         git pull --rebase\n' +
-            '  3. Install deps:        npm install\n' +
-            '  4. Restore changes:     git stash pop\n' +
-            '  5. Run release again',
-          'How to fix:'
-        );
-        clack.outro('Stash your changes, pull, then retry');
-        exit(1);
+        clack.log.warn('You have uncommitted changes');
+
+        try {
+          const statusOutput = exec('git status --short', true);
+          clack.note(statusOutput, 'Uncommitted changes:');
+        } catch {
+          // Ignore if we can't show status
+        }
+
+        const shouldCommitFirst = await clack.confirm({
+          message: 'Commit changes before pulling? (recommended)',
+          initialValue: true,
+        });
+
+        if (clack.isCancel(shouldCommitFirst) || !shouldCommitFirst) {
+          clack.cancel('Release cancelled - commit or stash your changes first');
+          exit(0);
+        }
+
+        // Commit the changes
+        try {
+          exec('git add .');
+          exec('git commit -m "WIP: save changes before pulling remote updates"');
+          clack.log.success('Changes committed');
+        } catch (error) {
+          clack.log.error('Failed to commit changes');
+          clack.log.error(error.message);
+          clack.outro('Fix the issue and try again');
+          exit(1);
+        }
       }
 
       // Safe to pull now
@@ -214,9 +232,9 @@ async function release() {
       clack.log.error(error.message);
       clack.note(
         'This could happen if:\n' +
-          '  • Pre-commit hooks failed\n' +
-          '  • Commit message has special characters\n' +
-          '  • Working directory has issues',
+        '  • Pre-commit hooks failed\n' +
+        '  • Commit message has special characters\n' +
+        '  • Working directory has issues',
         'Common causes:'
       );
       clack.outro('Fix the issue and try again');
@@ -259,9 +277,9 @@ async function release() {
     clack.log.error(error.message);
     clack.note(
       'This could happen if:\n' +
-        '  • Working directory is not clean\n' +
-        '  • Git tag already exists\n' +
-        '  • npm version scripts failed',
+      '  • Working directory is not clean\n' +
+      '  • Git tag already exists\n' +
+      '  • npm version scripts failed',
       'Common causes:'
     );
     clack.outro('Fix the issue and try again');
@@ -293,12 +311,12 @@ async function release() {
     clack.log.error(error.message);
     clack.note(
       'This could happen if:\n' +
-        '  • Network connection issues\n' +
-        '  • No upstream branch configured\n' +
-        '  • Remote rejected push (conflicts)\n' +
-        '\n' +
-        'Your version was bumped locally. Push manually:\n' +
-        '  git push && git push --tags',
+      '  • Network connection issues\n' +
+      '  • No upstream branch configured\n' +
+      '  • Remote rejected push (conflicts)\n' +
+      '\n' +
+      'Your version was bumped locally. Push manually:\n' +
+      '  git push && git push --tags',
       'Common causes:'
     );
     clack.outro('Push manually to complete release');
