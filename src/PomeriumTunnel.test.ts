@@ -735,5 +735,52 @@ describe('PomeriumTunnel', () => {
         })
       );
     });
+
+    it('should not log stderr by default (debug: false)', async () => {
+      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      const tunnel = new PomeriumTunnel({
+        targetHost: 'tcp+https://example.com:443',
+        listenPort: 8443,
+      });
+
+      const startPromise = tunnel.start();
+
+      setTimeout(() => {
+        mockProcess.stderr.emit('data', Buffer.from('some stderr output'));
+        mockProcess.stdout.emit(
+          'data',
+          Buffer.from('{"level":"info","message":"connected"}\n')
+        );
+      }, 10);
+
+      await startPromise;
+
+      expect(consoleErrorSpy).not.toHaveBeenCalled();
+      consoleErrorSpy.mockRestore();
+    });
+
+    it('should log stderr when debug: true', async () => {
+      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      const tunnel = new PomeriumTunnel({
+        targetHost: 'tcp+https://example.com:443',
+        listenPort: 8443,
+        debug: true,
+      });
+
+      const startPromise = tunnel.start();
+
+      setTimeout(() => {
+        mockProcess.stderr.emit('data', Buffer.from('some stderr output'));
+        mockProcess.stdout.emit(
+          'data',
+          Buffer.from('{"level":"info","message":"connected"}\n')
+        );
+      }, 10);
+
+      await startPromise;
+
+      expect(consoleErrorSpy).toHaveBeenCalledWith('[pomerium-cli stderr]:', 'some stderr output');
+      consoleErrorSpy.mockRestore();
+    });
   });
 });

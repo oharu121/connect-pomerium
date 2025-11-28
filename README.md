@@ -105,6 +105,7 @@ interface PomeriumTunnelConfig {
   // NEW in v2.0.0
   onLog?: (log: PomeriumLogEntry) => void;  // Access raw CLI logs
   logLevel?: 'debug' | 'info' | 'warn' | 'error'; // CLI log level (default: 'info')
+  debug?: boolean;                           // Enable stderr logging (default: false)
 }
 ```
 

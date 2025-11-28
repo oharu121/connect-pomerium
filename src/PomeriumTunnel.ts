@@ -33,6 +33,7 @@ import {
  */
 export class PomeriumTunnel {
   private config: PomeriumTunnelConfig & {
+    debug: boolean;
     autoReconnect: boolean;
     maxReconnectAttempts: number;
     reconnectDelay: number;
@@ -64,6 +65,7 @@ export class PomeriumTunnel {
       onAuthRequired: config.onAuthRequired,
       onLog: config.onLog,
       logLevel: config.logLevel,
+      debug: config.debug ?? false,
       autoReconnect: config.autoReconnect ?? false,
       maxReconnectAttempts: config.maxReconnectAttempts ?? 0,
       reconnectDelay: config.reconnectDelay ?? 5000,
@@ -223,7 +225,9 @@ export class PomeriumTunnel {
 
         // Handle stderr for debugging (should rarely output anything in v0.29.0+)
         this.process.stderr?.on('data', (chunk) => {
-          console.error('[pomerium-cli stderr]:', chunk.toString());
+          if (this.config.debug) {
+            console.error('[pomerium-cli stderr]:', chunk.toString());
+          }
         });
 
         // Handle process close

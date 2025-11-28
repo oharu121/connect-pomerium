@@ -94,6 +94,12 @@ export interface PomeriumTunnelConfig {
    * @default 'info'
    */
   logLevel?: 'debug' | 'info' | 'warn' | 'error';
+
+  /**
+   * Optional: Enable debug logging (pomerium-cli stderr output)
+   * @default false
+   */
+  debug?: boolean;
 }
 
 /**

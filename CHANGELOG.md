@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.1] - 2025-11-29
+
+### Added
+
+- ✨ **`debug` config option** - Control stderr logging from pomerium-cli (default: `false`)
+  - Libraries shouldn't pollute the consumer's console by default
+  - Set `debug: true` to see stderr output for troubleshooting
+
+### Changed
+
+- Stderr output from pomerium-cli is now silent by default
+- This suppresses harmless internal retry messages like "bind: Only one usage of each socket address"
+
 ## [2.0.0] - 2025-11-23
 
 ### Breaking Changes
