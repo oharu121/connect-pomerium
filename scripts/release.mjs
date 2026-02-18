@@ -94,7 +94,7 @@ async function release() {
       });
 
       if (clack.isCancel(shouldPull) || !shouldPull) {
-        clack.cancel('Release cancelled - pull changes first with: npm run sync');
+        clack.cancel('Release cancelled - pull changes first with: pnpm run sync');
         exit(0);
       }
 
@@ -138,7 +138,7 @@ async function release() {
       s1b.start('Pulling latest changes...');
       try {
         exec('git pull --rebase');
-        exec('npm install');
+        exec('pnpm install');
         s1b.stop('✅ Pulled and synced successfully');
       } catch (error) {
         s1b.stop('❌ Pull failed');
@@ -158,7 +158,7 @@ async function release() {
   const s2 = clack.spinner();
   s2.start('Running tests...');
   try {
-    exec('npm run test:all');
+    exec('pnpm run test:all');
     s2.stop('✅ All tests passed');
   } catch (error) {
     s2.stop('❌ Tests failed');
@@ -260,7 +260,7 @@ async function release() {
   // Get current version
   let currentVersion;
   try {
-    currentVersion = exec('npm pkg get version', true).trim().replace(/"/g, '');
+    currentVersion = exec('pnpm pkg get version', true).trim().replace(/"/g, '');
   } catch {
     clack.log.error('Failed to get current version');
     exit(1);
@@ -269,7 +269,7 @@ async function release() {
   const s3 = clack.spinner();
   s3.start(`Bumping ${versionType} version...`);
   try {
-    const output = exec(`npm version ${versionType}`, true);
+    const output = exec(`pnpm version ${versionType}`, true);
     const newVersion = output.trim().replace('v', '');
     s3.stop(`✅ Version bumped: ${currentVersion} → ${newVersion}`);
   } catch (error) {

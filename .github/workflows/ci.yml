@@ -16,25 +16,29 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v6
 
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
       - name: Setup Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v6
         with:
           node-version: ${{ matrix.node-version }}
+          cache: 'pnpm'
 
       - name: Install dependencies
-        run: npm install
+        run: pnpm install
 
       - name: Type check
-        run: npm run typecheck
+        run: pnpm run typecheck
 
       - name: Lint
-        run: npm run lint
+        run: pnpm run lint
 
       - name: Run tests
-        run: npm run test:coverage
+        run: pnpm run test:coverage
 
       - name: Build
-        run: npm run build
+        run: pnpm run build
 
       - name: Upload coverage to Codecov
         if: matrix.node-version == '20'

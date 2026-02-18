@@ -30,7 +30,7 @@
 ## Installation
 
 ```bash
-npm install connect-pomerium
+pnpm add connect-pomerium
 ```
 
 ## Quick Start
@@ -159,7 +159,7 @@ To run an example:
 
 ```bash
 # Install dependencies for the example
-npm install playwright  # or puppeteer
+pnpm add playwright  # or puppeteer
 
 # Run the example
 npx tsx examples/02-okta-playwright.ts
@@ -231,7 +231,7 @@ For CI/CD and automation, provide an `onAuthRequired` callback. The library supp
 #### With Playwright
 
 ```bash
-npm install playwright
+pnpm add playwright
 ```
 
 ```typescript
@@ -247,7 +247,7 @@ onAuthRequired: async (authUrl) => {
 #### With Puppeteer
 
 ```bash
-npm install puppeteer
+pnpm add puppeteer
 ```
 
 ```typescript
@@ -354,7 +354,7 @@ If you see log parsing errors or connection issues:
 
 2. **If < v0.29.0:**
    - Update to v0.29.0+ from https://github.com/pomerium/cli/releases
-   - OR use `connect-pomerium@1.x`: `npm install connect-pomerium@1.0.1`
+   - OR use `connect-pomerium@1.x`: `pnpm add connect-pomerium@1.0.1`
 
 3. **If already v0.29.0+** and still having issues, please [open an issue](https://github.com/oharu121/connect-pomerium/issues)
 
@@ -472,26 +472,26 @@ No. This library is specifically for **automation scenarios** (testing, CI/CD, s
 ### Build
 
 ```bash
-npm run build
+pnpm run build
 ```
 
 ### Test
 
 ```bash
-npm test
+pnpm test
 ```
 
 ### Lint
 
 ```bash
-npm run lint
-npm run format
+pnpm run lint
+pnpm run format
 ```
 
 ### Validate Package Exports
 
 ```bash
-npm run check:exports
+pnpm run check:exports
 ```
 
 ## Release Workflow
@@ -503,9 +503,9 @@ This package uses automated publishing via GitHub Actions.
 1. **Make your changes** and commit them
 2. **Update the version:**
    ```bash
-   npm version patch  # for bug fixes
-   npm version minor  # for new features
-   npm version major  # for breaking changes
+   pnpm version patch  # for bug fixes
+   pnpm version minor  # for new features
+   pnpm version major  # for breaking changes
    ```
 3. **Push the changes and tags:**
    ```bash

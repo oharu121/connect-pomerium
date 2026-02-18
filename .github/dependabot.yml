@@ -16,7 +16,7 @@ updates:
     open-pull-requests-limit: 10
     labels:
       - "dependencies"
-      - "npm"
+      - "pnpm"
 
   # Check for GitHub Actions updates
   - package-ecosystem: "github-actions"
